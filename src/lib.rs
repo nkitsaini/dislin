@@ -1,6 +1,5 @@
 mod linear;
 use linear::*;
-use serde::Deserialize;
 use worker::{wasm_bindgen::JsValue, *};
 
 pub fn get_discord_webhook(ctx: &RouteContext<()>) -> Result<String> {
@@ -11,43 +10,6 @@ pub fn get_discord_webhook(ctx: &RouteContext<()>) -> Result<String> {
 pub fn get_linear_api_key(ctx: &RouteContext<()>) -> Result<String> {
     let env = "LINEAR_API_KEY";
     Ok(ctx.var(env).or_else(|_x| ctx.secret(env))?.to_string())
-}
-#[derive(Debug, Deserialize, PartialEq, Eq)]
-struct LinearComment {
-    id: String,
-    body: String,
-    #[serde(rename = "userId")]
-    user_id: String,
-    #[serde(rename = "issueId")]
-    issue_id: String,
-}
-
-#[derive(Debug, Deserialize, PartialEq, Eq)]
-#[serde(tag = "type", content = "data")]
-enum LinearEvent {
-    // TODO: Fill the rest from: https://developers.linear.app/docs/graphql/webhooks#data-change-events-payload
-    Comment(LinearComment),
-}
-
-#[derive(Debug, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
-enum LinearAction {
-    Create,
-    Update,
-    Remove,
-}
-
-#[derive(Debug, Deserialize, PartialEq, Eq)]
-struct LinearPayloadBody {
-    action: LinearAction,
-
-    #[serde(rename = "createdAt")]
-    created_at: String,
-
-    url: String,
-
-    #[serde(flatten)]
-    event: LinearEvent,
 }
 
 #[event(fetch, respond_with_errors)]
@@ -60,8 +22,16 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
             return Response::ok("Yes, we're good.");
         })
         .post_async("/linear_webhook", |mut req, ctx| async move {
-            let data: LinearPayloadBody = req.json().await?;
+            let data: serde_json::Value = req.json().await?;
             console_log!("Linear Data: {:?}", &data);
+            let data: LinearPayloadBody =  match serde_json::from_value(data) {
+                Ok(x) => x,
+                Err(e) => {
+                    console_log!("Unparsable linear input. e={:?}", e);
+                    return Response::ok("I dont' support it yet. but okay");
+                }
+            };
+
             if data.action != LinearAction::Create {
                 return Response::ok("Okay");
             }

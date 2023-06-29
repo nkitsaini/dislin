@@ -14,12 +14,12 @@ pub struct CommentInfo;
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
 pub struct LinearComment {
-    id: String,
-    body: String,
+    pub id: String,
+    pub body: String,
     #[serde(rename = "userId")]
-    user_id: String,
+    pub user_id: String,
     #[serde(rename = "issueId")]
-    issue_id: String,
+    pub issue_id: String,
 }
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
@@ -39,15 +39,15 @@ pub enum LinearAction {
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
 pub struct LinearPayloadBody {
-    action: LinearAction,
+    pub action: LinearAction,
 
     #[serde(rename = "createdAt")]
-    created_at: String,
+    pub created_at: String,
 
-    url: String,
+    pub url: Option<String>,
 
     #[serde(flatten)]
-    event: LinearEvent,
+    pub event: LinearEvent,
 }
 
 pub struct LinearCommentMeta {
@@ -131,8 +131,43 @@ fn payload_deser() {
     let expected = LinearPayloadBody {
         action: LinearAction::Create,
         url:
-            "https://linear.app/issue/LIN-1778/foo-bar#comment-77217de3-fb52-4dad-bb9a-b356beb93de8"
+            Some("https://linear.app/issue/LIN-1778/foo-bar#comment-77217de3-fb52-4dad-bb9a-b356beb93de8"
+                .to_string()),
+        created_at: "2020-01-23T12:53:18.084Z".to_string(),
+        event: LinearEvent::Comment(LinearComment {
+            id: "2174add1-f7c8-44e3-bbf3-2d60b5ea8bc9".to_string(),
+            body: "Indeed, I think this is definitely an improvement over the previous version."
                 .to_string(),
+            user_id: "aacdca22-6266-4c0a-ab3c-8fa70a26765c".to_string(),
+            issue_id: "539068e2-ae88-4d09-bd75-22eb4a59612f".to_string(),
+        }),
+    };
+    assert_eq!(data, expected);
+}
+#[test]
+fn payload_deser2() {
+    let data = r#"
+{
+  "action": "create",
+  "data": {
+    "id": "2174add1-f7c8-44e3-bbf3-2d60b5ea8bc9",
+    "createdAt": "2020-01-23T12:53:18.084Z",
+    "updatedAt": "2020-01-23T12:53:18.084Z",
+    "archivedAt": null,
+    "body": "Indeed, I think this is definitely an improvement over the previous version.",
+    "edited": false,
+    "issueId": "539068e2-ae88-4d09-bd75-22eb4a59612f",
+    "userId": "aacdca22-6266-4c0a-ab3c-8fa70a26765c"
+  },
+  "type": "Comment",
+  "createdAt": "2020-01-23T12:53:18.084Z",
+  "webhookTimestamp": 1676056940508
+}
+"#;
+    let data: LinearPayloadBody = serde_json::from_str(data).unwrap();
+    let expected = LinearPayloadBody {
+        action: LinearAction::Create,
+        url: None,
         created_at: "2020-01-23T12:53:18.084Z".to_string(),
         event: LinearEvent::Comment(LinearComment {
             id: "2174add1-f7c8-44e3-bbf3-2d60b5ea8bc9".to_string(),
