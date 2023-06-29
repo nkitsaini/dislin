@@ -1,0 +1,17 @@
+query CommentInfo($comment_id: String!, $user_id: String!) {
+  comment(id: $comment_id) {
+    
+      issue {
+        title,
+        id,
+        identifier
+      },
+      body
+    
+  }
+  user(id:$user_id) {
+    name,
+    email
+  }
+}
+
