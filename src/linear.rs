@@ -12,7 +12,7 @@ use worker::*;
 )]
 pub struct CommentInfo;
 
-#[derive(Debug, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Deserialize, PartialEq, Eq, Clone)]
 pub struct LinearComment {
     pub id: String,
     pub body: String,

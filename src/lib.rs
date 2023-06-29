@@ -36,7 +36,7 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
                 return Response::ok("Okay");
             }
             let comment = match data.event {
-                LinearEvent::Comment(x) => x,
+                LinearEvent::Comment(x) => x.clone(),
             };
             let webhook = get_discord_webhook(&ctx)?;
             let mut discord_msg = comment.body;
@@ -45,8 +45,11 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
                     .await?;
             discord_msg += "\n";
             discord_msg = format!(
-                "[{}: {}]\n{}",
-                &comment_info.issue_id, &comment_info.issue_title, discord_msg
+                "[{}: {}]{}\n{}",
+                &comment_info.issue_id,
+                &comment_info.issue_title,
+                data.url.map(|x| format!("({})", x)).unwrap_or("".to_string()),
+                discord_msg,
             );
 
             let data =
